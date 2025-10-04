@@ -38,7 +38,7 @@ def load_vectorstore():
 vectordb = load_vectorstore()
 
 # Groq LLM
-llm = ChatGroq(model="llama-3.1-8b-instant")
+llm = ChatGroq(model="openai/gpt-oss-120b")
 
 # RetrievalQA
 retriever = vectordb.as_retriever(search_kwargs={"k": 4})
@@ -51,7 +51,7 @@ qa = RetrievalQA.from_chain_type(
 
 # Streamlit UI
 st.title("📚 RAG Chat with Your Document")
-st.markdown("Ask questions about your PDF below 👇")
+st.markdown("Ask questions about a research paper PDF named 'Attention is All You Need' below 👇")
 
 query = st.text_input("Enter your question:")
 
