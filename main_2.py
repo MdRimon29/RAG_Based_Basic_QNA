@@ -15,7 +15,7 @@ import os, shutil
 load_dotenv()
 
 PDF_FOLDER = "data"
-DEFAULT_PDF_PATH = os.path.join(PDF_FOLDER, "Medical_Words_Reference.pdf")
+DEFAULT_PDF_PATH = os.path.join(PDF_FOLDER, "Medical_Words_Reference.pdf")                                                          
 VECTOR_PATH = "faiss_index"
 
 os.makedirs(PDF_FOLDER, exist_ok=True)
