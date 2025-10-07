@@ -36,6 +36,33 @@ def create_vectorstore(pdf_path: str):
     vectordb.save_local(VECTOR_PATH)
     return vectordb
 
+from langchain.prompts import PromptTemplate
+
+def build_qa_from_pdf(pdf_path: str):
+    vectordb = create_vectorstore(pdf_path)
+    retriever = vectordb.as_retriever(search_kwargs={"k": 4})
+
+    prompt = PromptTemplate(
+        template=(
+            "You are a helpful assistant. "
+            "Answer the user's question briefly and clearly in one or two sentences. "
+            "Do not include sources or extra newlines. "
+            "If the question is simple (like general knowledge), reply shortly.\n\n"
+            "Context:\n{context}\n\n"
+            "Question: {question}\n\n"
+            "Answer:"
+        ),
+        input_variables=["context", "question"],
+    )
+
+    return RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever,
+        return_source_documents=False,
+        chain_type_kwargs={"prompt": prompt}
+    )
+
 
 def build_qa_from_pdf(pdf_path: str):
     vectordb = create_vectorstore(pdf_path)
@@ -44,7 +71,7 @@ def build_qa_from_pdf(pdf_path: str):
         llm=llm,
         chain_type="stuff",
         retriever=retriever,
-        return_source_documents=True
+        return_source_documents=False
     )
 
 
@@ -79,19 +106,24 @@ class Question(BaseModel):
     query: str
 
 
+import re
+
+def clean_answer(text: str) -> str:
+    # Remove markdown bold/italic and extra spaces/newlines
+    text = re.sub(r"[*_#>`~]+", "", text)
+    text = text.replace("\n", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
 @app.post("/ask")
 async def ask_uploaded_pdf(question: Question):
     global qa
     if qa is None:
         return {"error": "⚠️ No uploaded PDF found. Please upload one first at /upload_pdf."}
+
     result = qa.invoke({"query": question.query})
-    return {
-        "answer": result["result"],
-        "sources": [
-            {"page": doc.metadata.get("page"), "content": doc.page_content[:200]}
-            for doc in result["source_documents"]
-        ]
-    }
+    answer = clean_answer(result["result"])
+    return {"answer": answer}
 
 
 @app.post("/ask_default")
@@ -99,11 +131,7 @@ async def ask_default_pdf(question: Question):
     global default_qa
     if default_qa is None:
         return {"error": "⚠️ Default PDF not loaded. Ensure 'data/document.pdf' exists."}
+
     result = default_qa.invoke({"query": question.query})
-    return {
-        "answer": result["result"],
-        "sources": [
-            {"page": doc.metadata.get("page"), "content": doc.page_content[:200]}
-            for doc in result["source_documents"]
-        ]
-    }
+    answer = clean_answer(result["result"])
+    return {"answer": answer}
