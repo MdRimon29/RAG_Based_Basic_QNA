@@ -1,0 +1,22 @@
+Project-1/
+├─ .env
+├─ requirements.txt
+├─ src/
+│  ├─ embed.py
+│  ├─ ingest.py
+│  ├─ splitter.py
+│  ├─ vectorstore.py
+│  ├─ retriever.py
+│  ├─ main.py                 # (your terminal loop; keep for dev) :contentReference[oaicite:4]{index=4}
+│  ├─ api/
+│  │  ├─ app.py               # FastAPI entrypoint (uvicorn)
+│  │  ├─ deps.py              # shared deps (embeddings, llm, paths)
+│  │  ├─ rag_service.py       # RAG helpers (build/ask)
+│  │  └─ models.py            # Pydantic models (request/response)
+│  └─ ui/
+│     ├─ streamlit_app.py     # streamlit UI (calls FastAPI)
+│     └─ web/
+│        └─ index.html        # tiny HTML/JS UI (no frameworks)
+├─ faiss_db/                  # persisted FAISS stores (session_id folders)
+├─ uploads/                   # temporary uploaded files per session
+└─ run.sh                     # helper script (optional)

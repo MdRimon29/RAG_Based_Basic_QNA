@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Project-1 · RAG Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="title">Project-1 · RAG Chat</div>
+          <div class="hint">Upload PDFs · Ask questions · Session-isolated vectors</div>
+        </div>
+      </div>
+      <div class="row">
+        <span class="chip" id="health">health: unknown</span>
+        <span class="chip" id="sessionChip">session: —</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Controls -->
+      <div class="stack">
+        <div class="panel stack">
+          <div class="hint">API Base</div>
+          <div class="row">
+            <input id="apiBase" class="input" value="http://127.0.0.1:8000" />
+            <button class="btn" id="btnPing">Ping</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary" id="btnSession">Create Session</button>
+            <button class="btn btn-danger" id="btnDelete">Delete Session</button>
+          </div>
+          <div class="hint">Run API → <code>python -m uvicorn src.api.app:app --reload --host 127.0.0.1 --port 8000</code></div>
+        </div>
+
+        <div class="panel stack">
+          <div class="row wrap">
+            <div class="chip">PDF Upload</div>
+            <div class="hint">Add one or more .pdf files</div>
+          </div>
+          <input type="file" id="files" class="file" multiple accept=".pdf"/>
+          <div class="row">
+            <button class="btn" id="btnUpload">Upload</button>
+            <span class="hint" id="uploadStatus"></span>
+          </div>
+        </div>
+
+        <div class="panel stack">
+          <div class="row">
+            <label class="switch">
+              <input type="checkbox" id="useGlobal" checked/>
+              <span>Also search global index</span>
+            </label>
+          </div>
+          <div class="row">
+            <label>Top-K</label>
+            <select id="topK" class="select">
+              <option>2</option><option selected>4</option><option>6</option><option>8</option><option>10</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="panel">
+        <div id="chat" class="chat"></div>
+        <div class="footer">
+          <textarea id="q" class="input" placeholder="Ask anything… (with or without PDFs)"></textarea>
+          <button class="btn btn-primary" id="btnAsk">Ask</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
