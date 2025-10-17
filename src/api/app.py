@@ -2,6 +2,8 @@ import os, shutil
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from src.api.models import SessionCreateResponse, UploadResponse, ChatRequest, ChatResponse, Source
 from src.api.deps import UPLOADS_DIR, GLOBAL_DIR, session_dir
 from src.api import rag_service as rag
@@ -96,4 +98,14 @@ def delete_session(session_id: str):
 from fastapi.staticfiles import StaticFiles
 
 # Serve the static website at /web/
-app.mount("/web", StaticFiles(directory="src/ui/web", html=True), name="web")
+# app.mount("/web", StaticFiles(directory="src/ui/web", html=True), name="web")
+
+
+# --- Serve frontend: mount src/ui/web at root '/' so index loads at http://host:port/ ---
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "ui" / "web"
+if FRONTEND_DIR.exists():
+    # Mount at root to serve index.html from src/ui/web/
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="web")
+else:
+    # Helpful fallback / dev message
+    print(f"WARNING: frontend folder not found at {FRONTEND_DIR}. Verify src/ui/web exists.")

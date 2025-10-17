@@ -16,7 +16,9 @@ Project-1/
 │  └─ ui/
 │     ├─ streamlit_app.py     # streamlit UI (calls FastAPI)
 │     └─ web/
-│        └─ index.html        # tiny HTML/JS UI (no frameworks)
+│        ├─ index.html        # tiny HTML/JS UI (no frameworks)
+│        ├─ app.js            # JS codes are here
+│        └─ style.css         # for css codes
 ├─ faiss_db/                  # persisted FAISS stores (session_id folders)
 ├─ uploads/                   # temporary uploaded files per session
 └─ run.sh                     # helper script (optional)
