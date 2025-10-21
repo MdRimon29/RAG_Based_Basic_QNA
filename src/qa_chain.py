@@ -3,7 +3,7 @@
 # Build a Retrieval-QA Chain
 
 from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from retriever import get_retriever
 from embed import get_embedding_model
@@ -50,7 +50,6 @@ def build_qa_chain(persist_dir="faiss_db"):
     return RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,
-        chain_type="stuff",
         chain_type_kwargs={"prompt": prompt},
         return_source_documents=False,
     )
