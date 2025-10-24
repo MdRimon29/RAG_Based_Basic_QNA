@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <title>PDF Chatbot · RAG Assistant</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="icon" type="image/png" href="../img/favicon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,16 +26,16 @@
             <span>Upload Documents</span>
           </div>
           <div class="section-body">
-            <label class="file-label">
+            <label class="file-label" id="fileDropZone">
               <input type="file" id="files" class="file-input" multiple accept=".pdf"/>
               <div class="file-button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                 </svg>
-                <span>Choose Files</span>
+                <span>Choose Files or Drag & Drop</span>
               </div>
             </label>
-            <div class="file-hint" id="fileCount">No files selected</div>
+            <div class="file-list" id="fileList"></div>
             <button class="btn btn-primary" id="btnUpload">Upload PDFs</button>
             <div class="upload-status" id="uploadStatus"></div>
           </div>
@@ -77,6 +78,10 @@
           <div class="status-item">
             <span class="status-label">Documents:</span>
             <span class="status-value" id="docCount">0</span>
+          </div>
+          <div class="copyright">
+            <p>© 2025 Md Raisul Islam Rimon</p>
+            <p>All rights reserved</p>
           </div>
         </div>
       </div>

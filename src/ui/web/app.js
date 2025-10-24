@@ -12,7 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const useGlobalEl = $("useGlobal");
   const sessionStatusEl = $("sessionStatus");
   const docCountEl = $("docCount");
-  const fileCountEl = $("fileCount");
+  const fileListEl = $("fileList");
+  const fileDropZone = $("fileDropZone");
   const mobileToggle = $("mobileToggle");
   const sidebar = document.querySelector(".sidebar");
 
@@ -55,14 +56,89 @@ document.addEventListener("DOMContentLoaded", () => {
 
   qEl.addEventListener('input', () => autoResize(qEl));
 
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  // Display selected files
+  const displayFiles = (files) => {
+    if (!files || files.length === 0) {
+      fileListEl.classList.remove('show');
+      fileListEl.innerHTML = '';
+      return;
+    }
+
+    fileListEl.classList.add('show');
+    fileListEl.innerHTML = '';
+    
+    Array.from(files).forEach(file => {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+      fileItem.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span class="file-name" title="${file.name}">${file.name}</span>
+        <span class="file-size">${formatFileSize(file.size)}</span>
+      `;
+      fileListEl.appendChild(fileItem);
+    });
+  };
+
   // File input handler
   filesEl.addEventListener('change', () => {
-    const count = filesEl.files.length;
-    if (count > 0) {
-      fileCountEl.textContent = `${count} file${count > 1 ? 's' : ''} selected`;
-    } else {
-      fileCountEl.textContent = 'No files selected';
-    }
+    displayFiles(filesEl.files);
+  });
+
+  // Drag and drop handlers
+  if (fileDropZone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      fileDropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      fileDropZone.addEventListener(eventName, () => {
+        fileDropZone.querySelector('.file-button').classList.add('drag-over');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      fileDropZone.addEventListener(eventName, () => {
+        fileDropZone.querySelector('.file-button').classList.remove('drag-over');
+      });
+    });
+
+    fileDropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      
+      // Filter only PDF files
+      const pdfFiles = Array.from(files).filter(file => 
+        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      );
+      
+      if (pdfFiles.length > 0) {
+        // Create a new FileList-like object
+        const dataTransfer = new DataTransfer();
+        pdfFiles.forEach(file => dataTransfer.items.add(file));
+        filesEl.files = dataTransfer.files;
+        displayFiles(filesEl.files);
+      }
+    });
+  }
+
+  // File input handler
+  filesEl.addEventListener('change', () => {
+    displayFiles(filesEl.files);
   });
 
   // Example prompt buttons
@@ -185,7 +261,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Clear file input
     filesEl.value = '';
-    fileCountEl.textContent = 'No files selected';
+    fileListEl.classList.remove('show');
+    fileListEl.innerHTML = '';
   };
 
   // Ask a question
