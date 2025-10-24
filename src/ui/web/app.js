@@ -1,135 +1,98 @@
-/** ========= CONFIG / STATE ========= **/
-const $ = (id)=>document.getElementById(id);
-let API = $("apiBase").value.trim();
-let SESSION_ID = null;
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = id => document.getElementById(id);
 
-/** ========= UI HELPERS ========= **/
-function setHealth(ok){
-  $("health").textContent = "health: " + (ok ? "ok" : "down");
-  $("health").className = "chip " + (ok ? "ok" : "bad");
-}
-function setSessionChip(){ $("sessionChip").textContent = "session: " + (SESSION_ID || "—"); }
-function addBubble(text, who="bot", sources=[], mode=null){
-  const chat = $("chat");
-  const bubble = document.createElement("div");
-  bubble.className = "bubble " + (who==="user" ? "user" : "bot");
-  bubble.textContent = text;
-  chat.appendChild(bubble);
+  // Safe check for elements
+  const chatEl = $("chat");
+  const filesEl = $("files");
+  const btnUpload = $("btnUpload");
+  const btnAsk = $("btnAsk");
+  const qEl = $("q");
+  const uploadStatusEl = $("uploadStatus");
+  const sessionChipEl = $("sessionChip");
+  const topKEl = $("topK");
+  const useGlobalEl = $("useGlobal");
 
-  if (who!=="user" && (mode || (sources && sources.length))){
-    const meta = document.createElement("div"); meta.className = "meta";
-    if (mode) meta.innerHTML = `<strong>mode</strong>: ${mode}`;
-    bubble.appendChild(meta);
-
-    if (sources && sources.length){
-      const box = document.createElement("div"); box.className="sources";
-      sources.forEach(s=>{
-        const label = [s.doc_name || "doc", s.page!=null?("p."+s.page):null].filter(Boolean).join(" · ");
-        const chip = document.createElement("span"); chip.className="source"; chip.textContent = label;
-        box.appendChild(chip);
-      });
-      bubble.appendChild(box);
-    }
+  if (!chatEl || !filesEl || !btnUpload || !btnAsk || !qEl || !uploadStatusEl || !sessionChipEl) {
+    console.error("Some DOM elements not found. Check HTML IDs.");
+    return;
   }
-  chat.scrollTop = chat.scrollHeight;
-}
 
-/** ========= API CALLS ========= **/
-async function health(){
-  try{
-    const r = await fetch(`${API}/health`, {method:"GET"});
-    setHealth(r.ok);
-  }catch(e){ setHealth(false); }
-}
+  let SESSION_ID = null;
 
-async function createSession(){
-  try{
-    const r = await fetch(`${API}/sessions`, {method:"POST"});
-    if(!r.ok) throw new Error(await r.text());
-    const j = await r.json();
-    SESSION_ID = j.session_id;
-    setSessionChip();
-    addBubble("✅ New session created.", "bot");
-  }catch(e){
-    addBubble("❌ Failed to create session. Check API Base & server logs.", "bot");
-  }
-}
+  const API = window.location.origin.includes("localhost") 
+    ? "http://127.0.0.1:8000" 
+    : window.location.origin;
 
-async function deleteSession(){
-  if(!SESSION_ID){ addBubble("No session to delete.", "bot"); return; }
-  try{
-    const r = await fetch(`${API}/sessions/${SESSION_ID}`, {method:"DELETE"});
-    if(!r.ok) throw new Error(await r.text());
-    SESSION_ID = null; setSessionChip();
-    addBubble("🧹 Session deleted.", "bot");
-  }catch(e){ addBubble("❌ Failed to delete session.", "bot"); }
-}
-
-async function uploadFiles(){
-  const files = $("files").files;
-  if(!files.length){ $("uploadStatus").textContent = "choose at least one PDF"; return; }
-  if(!SESSION_ID){ await createSession(); }
-  $("uploadStatus").textContent = "uploading…";
-
-  for (const f of files){
-    if(!f.name.toLowerCase().endsWith(".pdf")) { $("uploadStatus").textContent = `skip non-pdf: ${f.name}`; continue; }
-    const fd = new FormData();
-    fd.append("files", f);
-    fd.append("session_id", SESSION_ID);
-    try{
-      const r = await fetch(`${API}/upload`, {method:"POST", body: fd});
-      if(!r.ok){ throw new Error(await r.text()); }
-      const j = await r.json();
-      $("uploadStatus").textContent = `ingested: ${j.files_ingested.join(", ")} (+${j.chunks_added} chunks)`;
-      addBubble(`📄 Ingested: ${j.files_ingested.join(", ")}`, "bot");
-    }catch(e){
-      $("uploadStatus").textContent = `error: ${f.name}`;
-      addBubble(`❌ Upload failed for ${f.name}: ${e}`, "bot");
-    }
-  }
-}
-
-async function ask(){
-  const q = $("q").value.trim();
-  if(!q) return;
-  $("q").value = "";
-  addBubble(q, "user");
-
-  const payload = {
-    query: q,
-    session_id: SESSION_ID, // can be null → backend answers with LLM-only
-    top_k: parseInt($("topK").value, 10),
-    use_global: $("useGlobal").checked
+  const addBubble = (text, who="bot") => {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + (who==="user"?"user":"bot");
+    bubble.textContent = text;
+    chatEl.appendChild(bubble);
+    chatEl.scrollTop = chatEl.scrollHeight;
   };
-  try{
-    const r = await fetch(`${API}/chat`, {
-      method:"POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    if(!r.ok){
-      const text = await r.text();
-      addBubble(`❌ ${r.status} ${r.statusText}\n${text}`, "bot");
-      return;
+
+  btnUpload.onclick = async () => {
+    const files = filesEl.files;
+    if (!files || !files.length) return uploadStatusEl.textContent="Choose at least 1 PDF";
+
+    if (!SESSION_ID) {
+      try {
+        const res = await fetch(`${API}/sessions`, {method:"POST"});
+        const data = await res.json();
+        SESSION_ID = data.session_id;
+        sessionChipEl.textContent = SESSION_ID;
+      } catch(err) {
+        console.error(err);
+        uploadStatusEl.textContent = "Failed to create session";
+        return;
+      }
     }
-    const j = await r.json();
-    addBubble(j.answer, "bot", j.sources || [], j.mode);
-  }catch(e){
-    addBubble("❌ Request failed. Is the API running?", "bot");
-  }
-}
 
-/** ========= EVENTS ========= **/
-$("btnPing").onclick = ()=>{ API = $("apiBase").value.trim() || API; health(); };
-$("btnSession").onclick = createSession;
-$("btnDelete").onclick = deleteSession;
-$("btnUpload").onclick = uploadFiles;
-$("btnAsk").onclick = ask;
-$("apiBase").addEventListener("change", (e)=>{ API = e.target.value.trim(); });
-$("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){ $("btnAsk").click(); } });
+    uploadStatusEl.textContent="Uploading…";
+    for (const f of files) {
+      const fd = new FormData();
+      fd.append("files", f);
+      fd.append("session_id", SESSION_ID);
 
-/** ========= INIT ========= **/
-(async function init(){
-  await health();
-  setSessionChip();
-})();
+      try {
+        const r = await fetch(`${API}/upload`, {method:"POST", body:fd});
+        const data = await r.json();
+        uploadStatusEl.textContent = `Ingested: ${data.files_ingested.join(", ")}`;
+        addBubble(`📄 Ingested: ${data.files_ingested.join(", ")}`);
+      } catch(err) {
+        console.error(err);
+        uploadStatusEl.textContent=`Error: ${f.name}`;
+        addBubble(`❌ Upload failed: ${f.name}`);
+      }
+    }
+  };
+
+  btnAsk.onclick = async () => {
+    const question = qEl.value.trim();
+    if (!question) return;
+    qEl.value="";
+    addBubble(question,"user");
+
+    try {
+      const r = await fetch(`${API}/chat`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          query: question,
+          session_id: SESSION_ID,
+          top_k: parseInt(topKEl.value,10),
+          use_global: useGlobalEl.checked
+        })
+      });
+      const data = await r.json();
+      addBubble(data.answer || "No answer","bot");
+    } catch(err) {
+      console.error(err);
+      addBubble("❌ API request failed","bot");
+    }
+  };
+
+  qEl.addEventListener("keydown", (e) => {
+    if (e.key==="Enter" && (e.ctrlKey||e.metaKey)) btnAsk.click();
+  });
+});

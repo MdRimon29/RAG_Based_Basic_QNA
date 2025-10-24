@@ -12,8 +12,8 @@
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <div class="title">Project-1 · RAG Chat</div>
-          <div class="hint">Upload PDFs · Ask questions · Session-isolated vectors</div>
+          <div class="title">PDF Chatbot</div>
+          <div class="hint">Upload PDFs · Ask questions</div>
         </div>
       </div>
       <div class="row">
@@ -25,18 +25,6 @@
     <div class="grid">
       <!-- Controls -->
       <div class="stack">
-        <div class="panel stack">
-          <div class="hint">API Base</div>
-          <div class="row">
-            <input id="apiBase" class="input" value="http://127.0.0.1:8000" />
-            <button class="btn" id="btnPing">Ping</button>
-          </div>
-          <div class="row">
-            <button class="btn btn-primary" id="btnSession">Create Session</button>
-            <button class="btn btn-danger" id="btnDelete">Delete Session</button>
-          </div>
-          <div class="hint">Run API → <code>python -m uvicorn src.api.app:app --reload --host 127.0.0.1 --port 8000</code></div>
-        </div>
 
         <div class="panel stack">
           <div class="row wrap">
@@ -58,7 +46,7 @@
             </label>
           </div>
           <div class="row">
-            <label>Top-K</label>
+            <label for="topK">Top-K</label>
             <select id="topK" class="select">
               <option>2</option><option selected>4</option><option>6</option><option>8</option><option>10</option>
             </select>
